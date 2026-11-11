@@ -203,6 +203,24 @@ graph TD
 
 **Goal:** Automatic sync across devices via user's own cloud storage.
 
+### Sync milestones (supersedes the 3.x checklists below where they overlap)
+
+Design: [docs/SYNC_DESIGN.md](./docs/SYNC_DESIGN.md). Priority order: A automatic two-way, B one-click, C scheduled; data integrity is never traded for automation. Build order is one-click first, then automation.
+
+- [x] **M1** Repository audit and plan
+- [x] **M2** Sync architecture, data model, tests (core only; no cloud or UI yet)
+  - [x] Fix bookmark duplication and note-header growth on repeated merges
+  - [x] Content fingerprint (change detection without timestamps)
+  - [x] Three-way reconcile: deletions, one-sided edits, conflicts, mass-deletion guard
+  - [x] `runSync` engine: CAS head, verified upload, atomic local commit, recovery copies, history
+  - [x] In-memory cloud/local fakes with failure injection; tests for interruption, simultaneous devices, multi-device convergence
+  - [x] Mobile typecheck added to CI
+- [ ] **M3** Google auth and Drive `appDataFolder` provider (web: Google Identity Services; Android: native or PKCE flow); needs an OAuth client from the project owner
+- [ ] **M4** One-click Sync Now: `LocalStore` for mobile and web (atomic commit, lock), status/offline/pending indicators; migrate apps to `mergeAll`
+- [ ] **M5** Conflict review, restore from previous versions, history UI, snapshot retention
+- [ ] **M6** Device testing: Galaxy Tab S8 Ultra, Redmi Note 5, EliteBook 840 G11
+- [ ] **M7** Automatic sync (on open, after changes, periodic where the OS allows) and scheduled fallback
+
 ### 3.1 Google Drive Integration
 - [ ] OAuth 2.0 flow (client-side only, no server)
 - [ ] DRIVE_APPDATA scope — files invisible to user, private to app

@@ -59,6 +59,28 @@ export {
 } from './merge-playlists.js';
 export { buildArchive, type BuildArchiveOptions } from './builder.js';
 export { groupBy, buildReverseIndex } from './utils.js';
+export { mergeAll, type MergeAllOptions, type MergeAllResult } from './merge-all.js';
+export {
+  reconcile,
+  type ReconcileResult,
+  type ReconcileReport,
+  type SyncConflict,
+  type MassDeletion,
+  type Side,
+} from './reconcile.js';
+export { contentFingerprint, canonicalContent } from './fingerprint.js';
+export { runSync, validateArchive, SyncError, type SyncOptions, type SyncResult } from './sync/engine.js';
+export type {
+  CloudProvider,
+  LocalStore,
+  SyncHead,
+  BaseRecord,
+  SyncHistoryEntry,
+  SyncErrorCode,
+  SyncOutcome,
+  SyncAction,
+} from './sync/types.js';
+export { MemoryCloud, MemoryLocalStore } from './sync/memory.js';
 export {
   type MergeConfig,
   type MergePreset,

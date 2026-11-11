@@ -118,8 +118,9 @@ describe('mergeBookmarks', () => {
 
   it('should not shift when B slot does not collide', () => {
     const { idMapA, idMapB } = setupMaps();
-    const bmA = [makeBm({ BookmarkId: 1, LocationId: 1, PublicationLocationId: 2, Slot: 0 })];
-    const bmB = [makeBm({ BookmarkId: 10, LocationId: 1, PublicationLocationId: 2, Slot: 5 })];
+    // Distinct titles: bookmarks with identical content are deduplicated regardless of slot.
+    const bmA = [makeBm({ BookmarkId: 1, LocationId: 1, PublicationLocationId: 2, Slot: 0, Title: 'First' })];
+    const bmB = [makeBm({ BookmarkId: 10, LocationId: 1, PublicationLocationId: 2, Slot: 5, Title: 'Second' })];
 
     const merged = mergeBookmarks(bmA, bmB, idMapA, idMapB);
 

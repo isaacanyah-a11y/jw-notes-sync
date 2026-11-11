@@ -67,23 +67,27 @@ export function mergeBookmarks(
     const newLocId = idMapB.get('Location', bm.LocationId);
     const newPubLocId = idMapB.get('Location', bm.PublicationLocationId);
 
+    // A bookmark is "the same" if it points at the same place with the same
+    // text, regardless of slot. Slot-agnostic matching is what keeps repeated
+    // syncs stable: a bookmark that was shifted to another slot by an earlier
+    // merge must not be re-added every time its original is merged again.
+    const existing = merged.find(
+      (b) =>
+        b.PublicationLocationId === newPubLocId &&
+        b.Title === bm.Title &&
+        b.Snippet === bm.Snippet &&
+        b.LocationId === newLocId &&
+        b.BlockType === bm.BlockType &&
+        b.BlockIdentifier === bm.BlockIdentifier,
+    );
+    if (existing) {
+      idMapB.set(TABLE, bm.BookmarkId, existing.BookmarkId);
+      continue;
+    }
+
     let slot = bm.Slot;
     const slots = slotsByPub.get(newPubLocId);
     if (slots?.has(slot)) {
-      // Check if it's actually the same bookmark (identical content)
-      const existing = merged.find(
-        (b) =>
-          b.PublicationLocationId === newPubLocId &&
-          b.Slot === slot &&
-          b.Title === bm.Title &&
-          b.Snippet === bm.Snippet &&
-          b.LocationId === newLocId,
-      );
-      if (existing) {
-        // Deduplicate — map B's old ID to the existing entry
-        idMapB.set(TABLE, bm.BookmarkId, existing.BookmarkId);
-        continue;
-      }
       slot = nextAvailableSlot(newPubLocId);
     }
 

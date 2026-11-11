@@ -30,6 +30,12 @@ jobs:
       - name: Test core
         run: pnpm --filter @jw-notes-sync/core test
 
+      - name: Build i18n
+        run: pnpm --filter @jw-notes-sync/i18n build
+
+      - name: Check mobile (typecheck)
+        run: pnpm --filter @jw-notes-sync/mobile exec tsc --noEmit
+
       - name: Check web (typecheck)
         run: pnpm --filter @jw-notes-sync/web check
 

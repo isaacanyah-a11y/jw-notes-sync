@@ -19,6 +19,40 @@ function remapNote(note: Note, newId: number, idMap: IdMap): Note {
 /**
  * Format a concatenated note from two conflicting versions.
  */
+interface Segment {
+  header: string;
+  body: string;
+}
+
+const HEADER_RE = /^\[[^\n]+ — [^\n]+\]$/;
+
+/**
+ * Split a note into segments. A previously concatenated note
+ * (`[device — date]\nbody` blocks joined by SEPARATOR) yields one segment per
+ * block; any other note is a single segment with a synthesized header.
+ */
+function toSegments(content: string | null, device: string, date: string): Segment[] {
+  const text = content ?? '';
+  if (text.includes(SEPARATOR)) {
+    const parts = text.split(SEPARATOR);
+    const segments: Segment[] = [];
+    for (const part of parts) {
+      const nl = part.indexOf('\n');
+      const header = nl === -1 ? part : part.slice(0, nl);
+      if (!HEADER_RE.test(header)) return [{ header: `[${device} — ${date}]`, body: text }];
+      segments.push({ header, body: nl === -1 ? '' : part.slice(nl + 1) });
+    }
+    return segments;
+  }
+  return [{ header: `[${device} — ${date}]`, body: text }];
+}
+
+/**
+ * Combine two versions of a note without ever dropping text, and without
+ * growing on repeat: bodies already present are not added again, and existing
+ * blocks are flattened rather than nested. If B adds nothing new, A's content
+ * is returned unchanged.
+ */
 function concatenateContent(
   contentA: string | null,
   deviceA: string,
@@ -26,12 +60,27 @@ function concatenateContent(
   contentB: string | null,
   deviceB: string,
   dateB: string,
-): string {
-  const headerA = `[${deviceA} — ${dateA}]`;
-  const headerB = `[${deviceB} — ${dateB}]`;
-  const bodyA = contentA ?? '';
-  const bodyB = contentB ?? '';
-  return `${headerA}\n${bodyA}${SEPARATOR}${headerB}\n${bodyB}`;
+): string | null {
+  const segA = toSegments(contentA, deviceA, dateA);
+  const segB = toSegments(contentB, deviceB, dateB);
+  const known = new Set(segA.map((s) => s.body.trim()));
+  const added = segB.filter((s) => !known.has(s.body.trim()));
+  if (added.length === 0) return contentA;
+  return [...segA, ...added].map((s) => `${s.header}\n${s.body}`).join(SEPARATOR);
+}
+
+const TITLE_SEPARATOR = ' / ';
+
+/** Union of title parts, stable under repetition. */
+function mergeTitles(a: string | null, b: string | null): string | null {
+  if (a === b) return a;
+  if (a === null) return b;
+  if (b === null) return a;
+  const parts = a.split(TITLE_SEPARATOR);
+  for (const part of b.split(TITLE_SEPARATOR)) {
+    if (!parts.includes(part)) parts.push(part);
+  }
+  return parts.join(TITLE_SEPARATOR);
 }
 
 export interface MergeNotesOptions {
@@ -119,17 +168,8 @@ export function mergeNotes(
             noteB.LastModified,
           );
 
-          // Merge titles: prefer non-null, or concatenate if both differ
-          let title: string | null;
-          if (noteA.Title === noteB.Title) {
-            title = noteA.Title;
-          } else if (noteA.Title === null) {
-            title = noteB.Title;
-          } else if (noteB.Title === null) {
-            title = noteA.Title;
-          } else {
-            title = `${noteA.Title} / ${noteB.Title}`;
-          }
+          // Merge titles: prefer non-null, or union the parts if both differ
+          const title = mergeTitles(noteA.Title, noteB.Title);
 
           const remapped = remapNote(noteA, newId, idMapA);
           merged.push({
